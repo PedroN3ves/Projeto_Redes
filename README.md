@@ -54,25 +54,25 @@ Numeração das casas:
 ```python
 import protocolo
 
-# Enviar: monte a mensagem e passe para enviar()
-protocolo.enviar(sock, protocolo.montar_jogar(5))
+protocolo.enviar(sock, protocolo.montar("JOGAR", 5))
 
-# Receber: um leitor por conexão
 leitor = protocolo.LeitorDeLinhas(sock)
 while True:
     try:
         linha = leitor.ler_linha()
-        if linha is None:           # a conexão fechou
+        if linha is None:           
             break
         comando, argumento = protocolo.interpretar(linha)
     except protocolo.ErroProtocolo as erro:
-        protocolo.enviar(sock, protocolo.montar_erro(str(erro)))
+        protocolo.enviar(sock, protocolo.montar("ERRO", str(erro)))
         continue
-    # ... tratar o comando ...
 ```
 
-Há uma função `montar_...` para cada mensagem da tabela acima. O
-argumento devolvido por `interpretar` já vem validado:
+A função `montar` recebe o comando e, quando houver, o argumento. No
+`INICIO`, o argumento é o símbolo e o nome juntos:
+`montar("INICIO", "X Ana")`.
+
+O argumento devolvido por `interpretar` já vem validado:
 
 | Comando | Argumento |
 |---|---|
@@ -91,11 +91,13 @@ continuar lendo.
 import interface
 
 nome = interface.ler_nome()
-interface.desenhar_tabuleiro("X-O-X----")
-casa = interface.ler_jogada()       # 1 a 9, ou None se digitar "sair"
+casa = interface.ler_jogada()       
+
+comando, argumento = protocolo.interpretar(linha)
+interface.mostrar(comando, argumento)
 ```
 
-As demais funções (`mostrar_aguarde`, `mostrar_inicio`, `mostrar_vez`,
-`mostrar_fim`, `mostrar_adversario_saiu`, `mostrar_erro`,
-`mostrar_servidor_offline`) apenas exibem um aviso; os parâmetros estão
-descritos no próprio arquivo.
+A função `mostrar` trata `AGUARDE`, `INICIO`, `TABULEIRO`, `FIM`, `SAIU`
+e `ERRO`. O `VEZ` fica de fora porque depende do símbolo do jogador:
+use `mostrar_vez(True)` ou `mostrar_vez(False)`. Para queda de conexão,
+há `mostrar_servidor_offline()`.

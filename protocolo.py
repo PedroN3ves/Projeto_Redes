@@ -1,8 +1,8 @@
 """
-Protocolo do jogo da velha em rede.
+Protocolo do jogo da velha em rede
 
-Cada mensagem é uma linha de texto (UTF-8) terminada em "\\n".
-O formato é: COMANDO, um espaço e o argumento (quando existe).
+Cada mensagem é uma linha de texto (UTF-8) terminada em "\\n"
+O formato é: COMANDO, um espaço e o argumento (quando existe)
 
 Cliente -> servidor
     NOME <nome>               nome do jogador (pode ter espaços)
@@ -19,68 +19,29 @@ Servidor -> cliente
     ERRO <motivo>             comando inválido ou jogada inválida
 """
 
-TAMANHO_MAXIMO = 256 
+TAMANHO_MAXIMO = 256  
 
 SIMBOLOS = ("X", "O")
 RESULTADOS = ("VITORIA", "DERROTA", "EMPATE")
 
 
 class ErroProtocolo(Exception):
-    """Mensagem malformada ou comando desconhecido."""
+    """Mensagem corrompida ou comando desconhecido"""
 
 
-# Montar
-
-def montar_nome(nome):
-    return "NOME " + nome + "\n"
-
-
-def montar_jogar(casa):
-    return "JOGAR " + str(casa) + "\n"
-
-
-def montar_sair():
-    return "SAIR\n"
-
-
-def montar_aguarde():
-    return "AGUARDE\n"
-
-
-def montar_inicio(simbolo, adversario):
-    return "INICIO " + simbolo + " " + adversario + "\n"
-
-
-def montar_tabuleiro(casas):
-    return "TABULEIRO " + casas + "\n"
-
-
-def montar_vez(simbolo):
-    return "VEZ " + simbolo + "\n"
-
-
-def montar_fim(resultado):
-    return "FIM " + resultado + "\n"
-
-
-def montar_saiu():
-    return "SAIU\n"
-
-
-def montar_erro(motivo):
-    return "ERRO " + motivo + "\n"
+def montar(comando, argumento=""):
+    if argumento == "":
+        return comando + "\n"
+    return comando + " " + str(argumento) + "\n"
 
 
 def enviar(sock, mensagem):
-    """Envia uma mensagem já montada pelo socket."""
     sock.sendall(mensagem.encode("utf-8"))
 
 
-# Interpretar
-
 def interpretar(linha):
     """
-    Recebe uma linha (sem o "\\n") e devolve (comando, argumento).
+    Recebe uma linha (sem o "\\n") e devolve (comando, argumento)
 
     O argumento depende do comando:
         NOME, ERRO              -> texto
@@ -89,7 +50,7 @@ def interpretar(linha):
         TABULEIRO, VEZ, FIM     -> texto já validado
         SAIR, AGUARDE, SAIU     -> None
 
-    Lança ErroProtocolo se a linha for malformada.
+    Lança ErroProtocolo se a linha for malformada
     """
     partes = linha.strip().split(" ", 1)
     comando = partes[0]
@@ -140,14 +101,8 @@ def interpretar(linha):
     raise ErroProtocolo("comando desconhecido")
 
 
-
 class LeitorDeLinhas:
-    """
-    O TCP entrega um fluxo de bytes, não mensagens separadas: um recv()
-    pode trazer meia mensagem ou várias de uma vez. O leitor guarda os
-    bytes recebidos em um buffer e só devolve uma linha quando ela
-    está completa.
-    """
+    """Junta os bytes recebidos do socket e devolve uma linha por vez"""
 
     def __init__(self, sock):
         self.sock = sock
@@ -155,22 +110,21 @@ class LeitorDeLinhas:
 
     def ler_linha(self):
         """
-        Devolve a próxima linha (sem o "\\n") ou None se a conexão fechou.
-        Lança ErroProtocolo se a linha for grande demais ou não for UTF-8.
+        Devolve a próxima linha (sem o "\\n") ou None se a conexão fechou
+        Lança ErroProtocolo se a linha for grande demais ou não for UTF-8
         """
-        while b"\n" not in self.buffer:
-            if len(self.buffer) > TAMANHO_MAXIMO:
-                self.buffer = b""
-                raise ErroProtocolo("linha grande demais")
+        while b"\n" not in self.buffer and len(self.buffer) <= TAMANHO_MAXIMO:
             dados = self.sock.recv(1024)
             if not dados:
                 return None
             self.buffer += dados
 
-        linha, self.buffer = self.buffer.split(b"\n", 1)
-
+        linha, separador, resto = self.buffer.partition(b"\n")
         if len(linha) > TAMANHO_MAXIMO:
+            self.buffer = b""
             raise ErroProtocolo("linha grande demais")
+        self.buffer = resto
+
         try:
             texto = linha.decode("utf-8")
         except UnicodeDecodeError:

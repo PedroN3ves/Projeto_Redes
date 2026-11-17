@@ -31,7 +31,7 @@ def ler_nome():
 
 
 def ler_jogada():
-    """Devolve um número de 1 a 9, ou None se o jogador digitar "sair""""
+    """Devolve um número de 1 a 9, ou None se o jogador digitar 'sair'"""
     while True:
         texto = input("Sua jogada (1 a 9, ou 'sair'): ").strip().lower()
         if texto == "sair":

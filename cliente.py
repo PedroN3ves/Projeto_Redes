@@ -19,7 +19,7 @@ import threading
 
 def conectar_servidor(ip, porta): 
     
-     """
+    """
     Cria o socket TCP e estabelece conexão com o servidor.
     AF_INET: utiliza endereços IPv4.
     SOCK_STREAM: define a comunicação utilizando TCP.
@@ -126,10 +126,10 @@ def iniciar_cliente():
     except Exception as erro:
         print(f"Erro ao enviar identificação: {erro}")
 
-   finally:
-    # Sinaliza o encerramento do cliente.
-    encerrado.set()
-    vez_event.set()
+    finally:
+        # Sinaliza o encerramento do cliente.
+        encerrado.set()
+        vez_event.set()
     
     # Encerra a comunicação para liberar a thread de recebimento
     try:
